@@ -86,6 +86,7 @@ module PryDebug
           end
         end
 
+        PryDebug.last_exception = PryDebug.exception_binding = nil
         PryDebug.debugging = false
         puts "execution terminated"
       else
