@@ -1,25 +1,25 @@
 require File.expand_path("helpers.rb", File.dirname(__FILE__))
 
 context "a method breakpoint" do
-  setup { PryDebug::MethodBreakpoint.new(2, "Time", "now", true) }
+  setup { PryDebug::MethodBreakpoint.new(2, "Time", "new", true) }
 
   asserts(:condition).nil
   asserts(:klass).equals "Time"
-  asserts(:name).equals "now"
+  asserts(:name).equals "new"
   asserts(:id).equals 2
 
   asserts(:actual_class).equals Time
-  asserts(:referred_method).equals (class << Time; self; end).instance_method(:now)
+  asserts(:referred_method).equals (class << Time; self; end).instance_method(:new)
 
-  asserts(:to_s).equals "breakpoint 2 at Time.now"
+  asserts(:to_s).equals "breakpoint 2 at Time.new"
 
-  asserts(:is_at?, Time, "now", true, binding)
-  asserts(:is_at?, Class.new(Time), "now", true, binding)
+  asserts(:is_at?, Time, "new", true, binding)
+  asserts(:is_at?, Class.new(Time), "new", true, binding)
 
-  denies(:is_at?, Time, "now", false, binding)
-  denies(:is_at?, String, "now", true, binding)
-  denies(:is_at?, Time, "new", true, binding)
-  denies(:is_at?, Class.new(Time) {def self.now;end}, "now", true, binding)
+  denies(:is_at?, Time, "new", false, binding)
+  denies(:is_at?, String, "new", true, binding)
+  denies(:is_at?, Time, "now", true, binding)
+  denies(:is_at?, Class.new(Time) {def self.new;end}, "new", true, binding)
 end
 
 context "a method breakpoint on an instance method" do

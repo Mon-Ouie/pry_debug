@@ -20,9 +20,10 @@ module PryDebug
                          end
 
           if referred_method && other_method
-            (referred_method == other_method) ||
-              (referred_method.name  == other_method.name &&
-               referred_method.owner == other_method.owner)
+            (other_class < klass || other_class == klass) &&
+              ((referred_method == other_method) ||
+               (referred_method.name  == other_method.name &&
+                referred_method.owner == other_method.owner))
           else
             false
           end
