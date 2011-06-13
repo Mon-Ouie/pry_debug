@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require 'pry_debug'
+
+if ARGV[0]
+  PryDebug.file = ARGV[0]
+  puts "debugged file set to #{ARGV[0]}"
+end
+
+PryDebug.start
