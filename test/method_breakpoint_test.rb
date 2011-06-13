@@ -37,7 +37,8 @@ context "a method breakpoint on an instance method" do
   asserts(:to_s).equals "breakpoint 2 at String#size"
 
   asserts(:is_at?, String, "size", false, binding)
-  asserts(:is_at?, String, "length", false, binding)
+  # in 1.8, aliased methods aren't equal
+  asserts(:is_at?, String, "length", false, binding) if RUBY_VERSION >= "1.9"
   asserts(:is_at?, Class.new(String), "size", false, binding)
 
   denies(:is_at?, String, "size", true, binding)
