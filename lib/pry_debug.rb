@@ -100,7 +100,7 @@ module PryDebug
     end
 
     if ret == :next
-      Pry.stepped_file = file
+      PryDebug.stepped_file = file
     end
 
     # In case trace_func was changed
