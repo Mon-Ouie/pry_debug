@@ -124,7 +124,7 @@ module PryDebug
         PryDebug.stepping = false
 
         start_pry binding, file
-      elsif bp = PryDebug.line_breakpoints.find { |bp| bp.is_at?(file, line, binding) }
+      elsif bp = PryDebug.line_breakpoints.find { |b| b.is_at?(file, line, binding) }
         puts "reached #{bp}"
         start_pry binding, file
       end

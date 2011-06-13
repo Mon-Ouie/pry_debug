@@ -9,7 +9,7 @@ context "a method breakpoint" do
   asserts(:id).equals 2
 
   asserts(:actual_class).equals Time
-  asserts(:referred_method).equals (class << Time; self; end).instance_method(:new)
+  asserts(:referred_method).equals((class << Time; self; end).instance_method(:new))
 
   asserts(:to_s).equals "breakpoint 2 at Time.new"
 
