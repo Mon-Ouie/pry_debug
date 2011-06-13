@@ -12,12 +12,17 @@ module PryDebug
   @stepped_file     = nil
   @stepping         = false
 
+  @exception_binding = nil
+  @last_exception    = nil
+
   class << self
     attr_reader :breakpoints
     attr_accessor :breakpoint_count
     attr_accessor :file
     attr_accessor :stepped_file
     attr_accessor :stepping
+    attr_accessor :exception_binding
+    attr_accessor :last_exception
 
     def line_breakpoints
       breakpoints.select { |bp| bp.is_a? LineBreakpoint }
@@ -25,6 +30,12 @@ module PryDebug
 
     def method_breakpoints
       breakpoints.select { |bp| bp.is_a? MethodBreakpoint }
+    end
+
+    def context_of_exception(ex)
+      if ex == last_exception
+        exception_binding
+      end
     end
   end
 
@@ -37,13 +48,42 @@ module PryDebug
     Pry.config.should_load_rc = false # avoid loading config twice
     ShortCommands.import Pry.commands
 
-    should_start = catch(:start_debugging!) do
-      Pry.start(TOPLEVEL_BINDING, :commands => ShortCommands)
-    end
+    loop do
+      should_start = catch(:start_debugging!) do
+        Pry.start(TOPLEVEL_BINDING, :commands => ShortCommands)
+      end
 
-    if should_start == :now!
-      set_trace_func proc { |*args| PryDebug.trace_func(*args) }
-      load PryDebug.file
+      if should_start == :now!
+        set_trace_func proc { |*args| PryDebug.trace_func(*args) }
+
+        begin
+          load PryDebug.file
+        rescue SystemExit
+          # let this go
+        rescue Exception => ex
+          set_trace_func nil
+          puts "unrescued exception: #{ex.class}: #{ex.message}"
+
+          if binding = PryDebug.context_of_exception(ex)
+            puts "returning back to where the exception was raised"
+
+            catch(:resume_debugging!) do
+              Pry.start(binding, :commands => ShortCommands)
+            end
+          else
+            puts "context of the exception is unknown, starting pry into"
+            puts "the exception."
+
+            catch(:resume_debugging!) do
+              Pry.start(ex, :commands => ShortCommands)
+            end
+          end
+        end
+
+        puts "execution terminated"
+      else
+        break # debugger wasn't started, leave now
+      end
     end
   end
 
@@ -61,6 +101,9 @@ module PryDebug
   end
 
   def trace_func(event, file, line, method, binding, klass)
+    # Ignore events in this file
+    return if File.expand_path(file) == File.expand_path(__FILE__)
+
     case event
     when 'line'
       if PryDebug.stepped_file == file
@@ -116,6 +159,9 @@ module PryDebug
         puts "reached #{bp}"
         start_pry binding, file
       end
+    when 'raise'
+      PryDebug.last_exception    = $!
+      PryDebug.exception_binding = binding
     end
   end
 
