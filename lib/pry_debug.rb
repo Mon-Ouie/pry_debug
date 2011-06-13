@@ -14,6 +14,7 @@ module PryDebug
 
   @exception_binding = nil
   @last_exception    = nil
+  @break_on_raise    = false
 
   class << self
     attr_reader :breakpoints
@@ -23,6 +24,7 @@ module PryDebug
     attr_accessor :stepping
     attr_accessor :exception_binding
     attr_accessor :last_exception
+    attr_accessor :break_on_raise
 
     def line_breakpoints
       breakpoints.select { |bp| bp.is_a? LineBreakpoint }
@@ -33,7 +35,7 @@ module PryDebug
     end
 
     def context_of_exception(ex)
-      if ex == last_exception
+      if ex.equal? last_exception
         exception_binding
       end
     end
@@ -102,7 +104,7 @@ module PryDebug
 
   def trace_func(event, file, line, method, binding, klass)
     # Ignore events in this file
-    return if File.expand_path(file) == File.expand_path(__FILE__)
+    return if file && File.expand_path(file) == File.expand_path(__FILE__)
 
     case event
     when 'line'
@@ -162,6 +164,11 @@ module PryDebug
     when 'raise'
       PryDebug.last_exception    = $!
       PryDebug.exception_binding = binding
+
+      if PryDebug.break_on_raise
+        puts "exception raised: #{$!.class}: #{$!.message}"
+        start_pry binding, file
+      end
     end
   end
 

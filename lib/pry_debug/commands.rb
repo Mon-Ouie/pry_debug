@@ -68,15 +68,26 @@ module PryDebug
       PryDebug.stepping = true
       throw :resume_debugging!
     end
+
+    command "break-on-raise", "toggle break on raise" do
+      PryDebug.break_on_raise = !PryDebug.break_on_raise
+
+      if PryDebug.break_on_raise
+        output.puts "break on raise enabled"
+      else
+        output.puts "break on raise disabled"
+      end
+    end
   end
 
   ShortCommands = Pry::CommandSet.new Commands do
-    alias_command "f",  "file"
-    alias_command "b",  "breakpoint"
-    alias_command "bp", "breakpoint"
-    alias_command "r",  "run"
-    alias_command "c",  "continue"
-    alias_command "n",  "next"
-    alias_command "s",  "step"
+    alias_command "f",   "file"
+    alias_command "b",   "breakpoint"
+    alias_command "bp",  "breakpoint"
+    alias_command "r",   "run"
+    alias_command "c",   "continue"
+    alias_command "n",   "next"
+    alias_command "s",   "step"
+    alias_command "bor", "break-on-raise"
   end
 end
