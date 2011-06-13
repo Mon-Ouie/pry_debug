@@ -27,7 +27,7 @@ module PryDebug
     end
 
     command "delete", "deletes a breakpoint" do |id|
-      PryDebug.breakpoints.reject { |b| b.id == id.to_i }
+      PryDebug.breakpoints.reject! { |b| b.id == id.to_i }
       output.puts "breakpoint #{id} deleted"
     end
 
