@@ -16,6 +16,8 @@ module PryDebug
   @last_exception    = nil
   @break_on_raise    = false
 
+  @debugging         = false
+
   class << self
     attr_reader :breakpoints
     attr_accessor :breakpoint_count
@@ -25,6 +27,7 @@ module PryDebug
     attr_accessor :exception_binding
     attr_accessor :last_exception
     attr_accessor :break_on_raise
+    attr_accessor :debugging
 
     def line_breakpoints
       breakpoints.select { |bp| bp.is_a? LineBreakpoint }
@@ -57,6 +60,7 @@ module PryDebug
 
       if should_start == :now!
         set_trace_func proc { |*args| PryDebug.trace_func(*args) }
+        PryDebug.debugging = true
 
         begin
           load PryDebug.file
@@ -82,6 +86,7 @@ module PryDebug
           end
         end
 
+        PryDebug.debugging = false
         puts "execution terminated"
       else
         break # debugger wasn't started, leave now
@@ -145,6 +150,8 @@ module PryDebug
                                    [false, false]
                                  elsif klass.methods.include? method
                                    [true, false]
+                                 else # should never happen
+                                   [false, true]
                                  end
                                end
 

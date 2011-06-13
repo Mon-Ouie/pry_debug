@@ -22,6 +22,15 @@ module PryDebug
       end
     end
 
+    command "breakpoint-list", "prints breakpoint list" do
+      output.puts PryDebug.breakpoints
+    end
+
+    command "delete", "deletes a breakpoint" do |id|
+      PryDebug.breakpoints.reject { |b| b.id == id.to_i }
+      output.puts "breakpoint #{id} deleted"
+    end
+
     command "cond", "adds a condition to a breakpoint" do |id, *code|
       if id =~ /^\d+$/ && (bp = PryDebug.breakpoints.find { |b| b.id == id.to_i })
         bp.condition = code.join(" ")
@@ -46,6 +55,11 @@ module PryDebug
     end
 
     command "run", "starts the debugger" do |file|
+      if PryDebug.debugging
+        output.puts "error: debugger already started"
+        next
+      end
+
       PryDebug.file = file if file
 
       if PryDebug.file and File.exist? PryDebug.file
@@ -57,19 +71,37 @@ module PryDebug
     end
 
     command "continue", "resumes execution" do
-      throw :resume_debugging!
+      if !PryDebug.debugging
+        output.puts "error: debugger hasn't been started yet"
+      else
+        throw :resume_debugging!
+      end
     end
 
     command "next", "resumes execution until next line in the same file" do
-      throw :resume_debugging!, :next
+      if !PryDebug.debugging
+        output.puts "error: debugger hasn't been started yet"
+      else
+        throw :resume_debugging!, :next
+      end
     end
 
     command "step", "resumes execution until next line gets executed" do
       PryDebug.stepping = true
-      throw :resume_debugging!
+
+      if PryDebug.debugging
+        throw :resume_debugging!
+      else # just start debugging with stepping set to true
+        if PryDebug.file and File.exist? PryDebug.file
+          throw :start_debugging!, :now!
+        else
+          output.puts "error: file does not exist: #{PryDebug.file}"
+          output.puts "create it or set a new file using the 'file' command."
+        end
+      end
     end
 
-    command "break-on-raise", "toggle break on raise" do
+    command "break-on-raise", "toggles break on raise" do
       PryDebug.break_on_raise = !PryDebug.break_on_raise
 
       if PryDebug.break_on_raise
@@ -84,6 +116,9 @@ module PryDebug
     alias_command "f",   "file"
     alias_command "b",   "breakpoint"
     alias_command "bp",  "breakpoint"
+    alias_command "bl",  "breakpoint-list"
+    alias_command "del", "delete"
+    alias_command "d",   "delete"
     alias_command "r",   "run"
     alias_command "c",   "continue"
     alias_command "n",   "next"
