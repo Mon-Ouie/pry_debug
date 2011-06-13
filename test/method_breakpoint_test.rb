@@ -18,7 +18,8 @@ context "a method breakpoint" do
 
   denies(:is_at?, Time, "new", false, binding)
   denies(:is_at?, String, "new", true, binding)
-  denies(:is_at?, Time, "now", true, binding)
+  # "now" doesn't pass on rbx because it's an alias
+  denies(:is_at?, Time, "parse", true, binding)
   denies(:is_at?, Class.new(Time) {def self.new;end}, "new", true, binding)
 end
 
