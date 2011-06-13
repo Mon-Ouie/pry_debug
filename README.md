@@ -93,6 +93,7 @@ It will run Pry once the breakpoint is reached. When you're done, just type
 ``c`` to continue.
 
 Breakpoints can be listed and removed whenever Pry is running:
+
 ```
 pry(Foo):3> b test_debug.rb:10
 added breakpoint 1 at test_debug.rb:10
