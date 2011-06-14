@@ -18,6 +18,6 @@ EOD
   s.executables   = %w[pry_debug]
   s.require_paths = %w[lib]
 
-  s.add_dependency "pry", "~> 0.9.0"
+  s.add_dependency "pry", "~> 0.9.0pre2"
   s.add_development_dependency "riot"
 end
