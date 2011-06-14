@@ -7,31 +7,52 @@ require 'pry_debug/commands'
 
 module PryDebug
   class << self
+    # @return [Array<LineBreakpoint,MethodBreakpoint>] All the enabled breakpoints
     attr_reader   :breakpoints
+
     attr_accessor :breakpoint_count
+
+    # @return [String, nil] File that PryDebug loads
     attr_accessor :file
+
+    # @return [String, nil] If not nil, the file where PryDebug needs to stop
+    #   (implying that next was called)
     attr_accessor :stepped_file
+
+    # @return [true, false]  True if stepping
     attr_accessor :stepping
+
+    # @return [Binding, nil] Binding where last_exception was raised
     attr_accessor :exception_binding
+
+    # @return [Exception, nil] Last exception that PryDebug has heard of
     attr_accessor :last_exception
+
+    # @return [true, false] True if PryDebug breaks on raise
     attr_accessor :break_on_raise
+
     attr_accessor :debugging
     attr_accessor :will_load
 
+    # @return [Array<LineBreakpoint>] Breakpoints on a line
     def line_breakpoints
       breakpoints.select { |bp| bp.is_a? LineBreakpoint }
     end
 
+    # @return [Array<MethodBreakpoint>] Breakpoints on a method
     def method_breakpoints
       breakpoints.select { |bp| bp.is_a? MethodBreakpoint }
     end
 
+    # @return [Binding, nil] Binding where the exception was raised, if still in
+    #   memory.
     def context_of_exception(ex)
       if ex.equal? last_exception
         exception_binding
       end
     end
 
+    # Resets PryDebug to its default state.
     def clean_up
       @breakpoints      = []
       @breakpoint_count = -1
@@ -52,6 +73,10 @@ module PryDebug
   clean_up
 
   module_function
+  # Starts the debguger.
+  #
+  # @param [true, false] load_file When set to false, PryDebug won't load
+  #   a file, and simply enable the tracing and let the user setup breakpoints.
   def start(load_file = true)
     PryDebug.will_load = load_file
 
@@ -106,6 +131,9 @@ module PryDebug
     end
   end
 
+  # Starts Pry with access to ShortCommands
+  # @param [Binding, object] binding Context to go to
+  # @param [String, nil] file Current file. Used for the next command.
   def start_pry(binding, file = nil)
     ret = catch(:resume_debugging!) do
       Pry.start(binding, :commands => ShortCommands)
