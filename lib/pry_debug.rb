@@ -16,6 +16,7 @@ module PryDebug
     attr_accessor :last_exception
     attr_accessor :break_on_raise
     attr_accessor :debugging
+    attr_accessor :will_load
 
     def line_breakpoints
       breakpoints.select { |bp| bp.is_a? LineBreakpoint }
@@ -43,13 +44,17 @@ module PryDebug
       @break_on_raise    = false
 
       @debugging         = false
+
+      @will_load         = false
     end
   end
 
   clean_up
 
   module_function
-  def start
+  def start(load_file = true)
+    PryDebug.will_load = load_file
+
     # Importing user-defined commands.
     # NB: what about commands defined in both sets? Currently, user-defined
     # commands override PryDebug's. What about doing it the other way around?
@@ -65,6 +70,8 @@ module PryDebug
       if should_start == :now!
         set_trace_func proc { |*args| PryDebug.trace_func(*args) }
         PryDebug.debugging = true
+
+        return unless load_file
 
         begin
           load PryDebug.file

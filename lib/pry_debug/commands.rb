@@ -70,7 +70,7 @@ module PryDebug
 
       PryDebug.file = file if file
 
-      if PryDebug.file and File.exist? PryDebug.file
+      if !PryDebug.will_load || (PryDebug.file and File.exist? PryDebug.file)
         throw :start_debugging!, :now!
       else
         if PryDebug.file
@@ -105,7 +105,7 @@ module PryDebug
       if PryDebug.debugging
         throw :resume_debugging!
       else # just start debugging with stepping set to true
-        if PryDebug.file and File.exist? PryDebug.file
+        if !PryDebug.will_load || (PryDebug.file and File.exist? PryDebug.file)
           throw :start_debugging!, :now!
         else
           output.puts "error: file does not exist: #{PryDebug.file}"

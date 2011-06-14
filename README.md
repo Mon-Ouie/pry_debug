@@ -215,3 +215,29 @@ From: /home/kilian/code/pry_debug/test_debug.rb @ line 22 in Object#N/A:
     27: b FooBar.jump
 pry(main):5>
 ```
+
+### Start in an existing program
+
+Instead of starting your program from PryDebug, you can start PryDebug from your
+program. In this case, it won't handle unrescued exceptions automatically,
+though.
+
+```ruby
+require 'pry_debug'
+PryDebug.start(false) # true makes PryDebug load its own file
+
+# you can make it handle exceptions yourself (or break-on-raise instead):
+begin
+  # ...
+rescue SystemExit
+  # nothing
+rescue Exception => ex
+  # PryDebug can still be started
+
+  if binding = PryDebug.context_of_exception(ex)
+    PryDebug.start_pry binding
+  else
+    PryDebug.start_pry ex
+  end
+end
+```
