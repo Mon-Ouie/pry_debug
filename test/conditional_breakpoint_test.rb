@@ -56,5 +56,4 @@ context "a conditional method breakpoint" do
   end
 end
 
-
 run_tests if $0 == __FILE__

@@ -11,7 +11,7 @@ module PryDebug
         class_method = (separator != "#")
 
         bp = PryDebug.add_method_breakpoint(klass, meth, class_method)
-        output.puts "addded #{bp}"
+        output.puts "added #{bp}"
       else
         output.puts "usage: breakpoint FILE:LINE"
         output.puts "    or breakpoint CLASS(#|.|::)METHOD"
@@ -31,9 +31,17 @@ module PryDebug
       output.puts "breakpoint #{id} deleted"
     end
 
-    command "cond", "adds a condition to a breakpoint" do |id, *code|
-      if id =~ /^\d+$/ && (bp = PryDebug.breakpoints.find { |b| b.id == id.to_i })
-        bp.condition = code.join(" ")
+    command "cond", "adds a condition to a breakpoint" do
+      id = string = nil
+      if arg_string =~ /^(\d+) (.+)$/
+        id, string = [$1.to_i, $2]
+      else
+        output.puts "usage: cond ID CODE"
+        next
+      end
+
+      if bp = PryDebug.breakpoints.find { |b| b.id == id }
+        bp.condition = string
         output.puts "condition set to #{bp.condition}"
       else
         output.puts "error: could not find breakpoint #{id}"
@@ -65,7 +73,12 @@ module PryDebug
       if PryDebug.file and File.exist? PryDebug.file
         throw :start_debugging!, :now!
       else
-        output.puts "error: file does not exist: #{PryDebug.file}"
+        if PryDebug.file
+          output.puts "error: file does not exist: #{PryDebug.file}"
+        else
+          output.puts "error: file is not set: #{PryDebug.file}"
+        end
+
         output.puts "create it or set a new file using the 'file' command."
       end
     end

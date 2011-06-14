@@ -6,20 +6,8 @@ require 'pry_debug/method_breakpoint'
 require 'pry_debug/commands'
 
 module PryDebug
-  @breakpoints      = []
-  @breakpoint_count = -1
-  @file             = nil
-  @stepped_file     = nil
-  @stepping         = false
-
-  @exception_binding = nil
-  @last_exception    = nil
-  @break_on_raise    = false
-
-  @debugging         = false
-
   class << self
-    attr_reader :breakpoints
+    attr_reader   :breakpoints
     attr_accessor :breakpoint_count
     attr_accessor :file
     attr_accessor :stepped_file
@@ -42,7 +30,23 @@ module PryDebug
         exception_binding
       end
     end
+
+    def clean_up
+      @breakpoints      = []
+      @breakpoint_count = -1
+      @file             = nil
+      @stepped_file     = nil
+      @stepping         = false
+
+      @exception_binding = nil
+      @last_exception    = nil
+      @break_on_raise    = false
+
+      @debugging         = false
+    end
   end
+
+  clean_up
 
   module_function
   def start
