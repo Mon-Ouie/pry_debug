@@ -16,6 +16,9 @@ context "a method breakpoint" do
   asserts(:is_at?, Time, "new", true, binding)
   asserts(:is_at?, Class.new(Time), "new", true, binding)
 
+  asserts(:is_at?, (class << Time; self; end), "new", false, binding)
+
+  denies(:is_at?, Class, "new", false, binding)
   denies(:is_at?, Time, "new", false, binding)
   denies(:is_at?, String, "new", true, binding)
   # "now" doesn't pass on rbx because it's an alias

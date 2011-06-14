@@ -1,6 +1,6 @@
 module PryDebug
   Commands = Pry::CommandSet.new do
-    command "breakpoint", "adds a breakpoint" do |argument|
+    command "breakpoint", "adds a breakpoint" do |argument, *|
       if argument =~ /(.+):(\d+)/
         file, line = $1, $2.to_i
 
@@ -26,7 +26,7 @@ module PryDebug
       output.puts PryDebug.breakpoints
     end
 
-    command "delete", "deletes a breakpoint" do |id|
+    command "delete", "deletes a breakpoint" do |id, *|
       PryDebug.breakpoints.reject! { |b| b.id == id.to_i }
       output.puts "breakpoint #{id} deleted"
     end
@@ -48,7 +48,7 @@ module PryDebug
       end
     end
 
-    command "uncond", "removes the condition of a breakpoint" do |id|
+    command "uncond", "removes the condition of a breakpoint" do |id, *|
       if id =~ /^\d+$/ && (bp = PryDebug.breakpoints.find { |b| b.id == id.to_i })
         bp.condition = nil
         output.puts "condition unset"
@@ -57,12 +57,12 @@ module PryDebug
       end
     end
 
-    command "file", "sets the file to start the debugger at" do |file|
+    command "file", "sets the file to start the debugger at" do |file, *|
       PryDebug.file = file
       output.puts "debugged file set to #{file}"
     end
 
-    command "run", "starts the debugger" do |file|
+    command "run", "starts the debugger" do |file, *|
       if PryDebug.debugging
         output.puts "error: debugger already started"
         next

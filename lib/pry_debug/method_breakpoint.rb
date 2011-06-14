@@ -8,8 +8,6 @@ module PryDebug
       if klass == other_class.to_s && name == other_name &&
           class_method == other_class_method
         true # exactly the same parameters
-      elsif class_method != other_class_method
-        false
       else # find out if the method we are referring to is the same as the one
            # that was called.
         if klass = actual_class
@@ -20,7 +18,9 @@ module PryDebug
                          end
 
           if referred_method && other_method
-            (other_class < klass || other_class == klass) &&
+            singleton_class = (class << klass; self; end)
+            (other_class < klass || other_class == klass ||
+             (singleton_class == other_class || singleton_class < klass)) &&
               ((referred_method == other_method) ||
                (referred_method.name  == other_method.name &&
                 referred_method.owner == other_method.owner))
