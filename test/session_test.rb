@@ -1,7 +1,33 @@
 require File.expand_path("helpers.rb", File.dirname(__FILE__))
 
+class InputTester
+  def initialize(actions)
+    @orig_actions = actions.dup
+    @actions = actions
+  end
+
+  def readline(*)
+    @actions.shift
+  end
+
+  def rewind
+    @actions = @orig_actions.dup
+  end
+end
+
 context "a PryDebug session" do
   helper(:clean_up) { PryDebug.clean_up }
+
+  helper(:run_debugger) do |input|
+    input  = InputTester.new(input)
+    output = StringIO.new
+
+    pry = Pry.new(:input => input, :output => output,
+                  :commands => PryDebug::ShortCommands)
+    pry.repl(TOPLEVEL_BINDING)
+
+    output.string
+  end
 
   setup { PryDebug }
 
