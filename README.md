@@ -25,6 +25,9 @@ code again.
 gem install pry_debug
 ```
 
+PryDebug works has been tested with CRuby 1.9.2 and 1.8.7, and works with some
+glitches in JRuby.
+
 ## Example
 
 Just use the ``pry_debug`` executable, configure the debugger (add breakpoints,
