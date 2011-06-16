@@ -1,3 +1,5 @@
+require 'thread'
+
 require 'pry'
 
 require 'pry_debug/conditional_breakpoint'
@@ -33,6 +35,7 @@ module PryDebug
 
     attr_accessor :debugging
     attr_accessor :will_load
+    attr_reader :mutex
 
     # @return [Array<LineBreakpoint>] Breakpoints on a line
     def line_breakpoints
@@ -67,6 +70,8 @@ module PryDebug
       @debugging         = false
 
       @will_load         = false
+
+      @mutex             = Mutex.new
     end
   end
 
@@ -93,7 +98,7 @@ module PryDebug
       end
 
       if should_start == :now!
-        set_trace_func proc { |*args| PryDebug.trace_func(*args) }
+        set_trace_func trace_proc
         PryDebug.debugging = true
 
         return unless load_file
@@ -144,7 +149,13 @@ module PryDebug
     end
 
     # In case trace_func was changed
-    set_trace_func proc { |*args| PryDebug.trace_func(*args) }
+    set_trace_func trace_proc
+  end
+
+  def trace_proc
+    proc do |*args|
+      PryDebug.mutex.synchronize { PryDebug.trace_func(*args) }
+    end
   end
 
   def trace_func(event, file, line, method, binding, klass)
@@ -209,6 +220,8 @@ module PryDebug
         start_pry binding, file
       end
     when 'raise'
+      return unless $!
+
       PryDebug.last_exception    = $!
       PryDebug.exception_binding = binding
 
