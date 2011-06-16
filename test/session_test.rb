@@ -154,43 +154,7 @@ desc
     end
 
     asserts("output") { @output }.matches "debugged file set to #{__FILE__}"
-
-    context "and running the debugger" do
-      hookup do
-        @output = nil
-
-        catch :start_debugging! do
-          @output = run_debugger ["r"]
-        end
-      end
-
-      asserts("output") { @output }.nil
-    end
-  end
-
-  context "running the debugger when file isn't set" do
-    hookup do
-      @output = nil
-
-      catch :start_debugging! do
-        @output = run_debugger ["r"]
-      end
-    end
-
-    asserts("output") { @output }.matches "error: file is not set"
-  end
-
-  context "running the debugger when file doesn't exist" do
-    hookup do
-      @output = nil
-      PryDebug.file = "#{__FILE__}_doesnt_exist.rb"
-
-      catch :start_debugging! do
-        @output = run_debugger ["r"]
-      end
-    end
-
-    asserts("output") { @output }.matches "error: file does not exist"
+    asserts(:file).equals __FILE__
   end
 
   context "after enabling break-on-raise" do
