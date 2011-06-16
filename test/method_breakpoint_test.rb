@@ -77,4 +77,14 @@ context "a method breakpoint with unknown class" do
   denies(:is_at?, Class.new {def self.now;end}, "foo", true, binding)
 end
 
+context "a method breakpoint with a non-class" do
+  setup { PryDebug::MethodBreakpoint.new(2, "File::SEPARATOR", "size", true) }
+
+  asserts(:actual_class).nil
+  asserts(:referred_method).nil
+
+  denies(:is_at?, File::SEPARATOR, "size", true, binding)
+  denies(:is_at?, String, "size", false, binding)
+end
+
 run_tests if $0 == __FILE__

@@ -5,6 +5,8 @@ module PryDebug
     alias class_method? class_method
 
     def at_method?(other_class, other_name, other_class_method)
+      return false unless Module === other_class
+
       if klass == other_class.to_s && name == other_name &&
           class_method == other_class_method
         true # exactly the same parameters
@@ -60,13 +62,16 @@ module PryDebug
     end
 
     def actual_class
+      # this method uses Module#=== to be BasicObject safe
       @actual_class ||= klass.split('::').inject(Object) do |mod, const_name|
-        if mod.respond_to?(:const_defined?) && mod.const_defined?(const_name)
+        if (Module === mod) && mod.const_defined?(const_name)
           mod.const_get const_name
         else
           break
         end
       end
+
+      (Module === @actual_class) ? @actual_class : nil
     end
 
     def has_instance_method?(klass, method)
