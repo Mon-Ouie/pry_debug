@@ -241,3 +241,10 @@ rescue Exception => ex
   end
 end
 ```
+
+### Threads
+
+It is completely possible you will want to use PryDebug in code that uses
+Thread. PryDebug will ensure that only one thread uses Pry. It will also keep
+information about breakpoints and stepping on a thread basis, to avoid
+unexpected and undetermined results.

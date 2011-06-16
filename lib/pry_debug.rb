@@ -8,6 +8,8 @@ require 'pry_debug/method_breakpoint'
 require 'pry_debug/commands'
 
 module PryDebug
+  DefinitionFile = File.expand_path(__FILE__)
+
   class << self
     # @return [Array<LineBreakpoint,MethodBreakpoint>] All the enabled breakpoints
     attr_reader   :breakpoints
@@ -19,22 +21,47 @@ module PryDebug
 
     # @return [String, nil] If not nil, the file where PryDebug needs to stop
     #   (implying that next was called)
-    attr_accessor :stepped_file
+    def stepped_file
+      Thread.current[:__pry_debug_stepped_file]
+    end
+
+    def stepped_file=(val)
+      Thread.current[:__pry_debug_stepped_file] = val
+    end
 
     # @return [true, false]  True if stepping
-    attr_accessor :stepping
+    def stepping
+      Thread.current[:__pry_debug_steppping]
+    end
+
+    def stepping=(val)
+      Thread.current[:__pry_debug_stepping] = val
+    end
 
     # @return [Binding, nil] Binding where last_exception was raised
-    attr_accessor :exception_binding
+    def exception_binding
+      Thread.current[:__pry_debug_exception_binding]
+    end
+
+    def exception_binding=(b)
+      Thread.current[:__pry_debug_exception_binding] = b
+    end
 
     # @return [Exception, nil] Last exception that PryDebug has heard of
-    attr_accessor :last_exception
+    def last_exception
+      Thread.current[:__pry_debug_last_exception]
+    end
+
+    def last_exception=(ex)
+      Thread.current[:__pry_debug_last_exception] = ex
+    end
 
     # @return [true, false] True if PryDebug breaks on raise
     attr_accessor :break_on_raise
 
     attr_accessor :debugging
     attr_accessor :will_load
+
     attr_reader :mutex
 
     # @return [Array<LineBreakpoint>] Breakpoints on a line
@@ -60,16 +87,18 @@ module PryDebug
       @breakpoints      = []
       @breakpoint_count = -1
       @file             = nil
-      @stepped_file     = nil
-      @stepping         = false
 
-      @exception_binding = nil
-      @last_exception    = nil
+      Thread.list.each do |th|
+        th[:__pry_debug_stepped_file] = nil
+        th[:__pry_debug_stepping]     = false
+
+        th[:__pry_debug_exception_binding] = nil
+        th[:__pry_debug_last_exception]    = nil
+      end
+
       @break_on_raise    = false
-
       @debugging         = false
-
-      @will_load         = false
+      @will_load         = true
 
       @mutex             = Mutex.new
     end
@@ -78,6 +107,7 @@ module PryDebug
   clean_up
 
   module_function
+
   # Starts the debguger.
   #
   # @param [true, false] load_file When set to false, PryDebug won't load
@@ -112,23 +142,20 @@ module PryDebug
           puts "unrescued exception: #{ex.class}: #{ex.message}"
 
           if binding = PryDebug.context_of_exception(ex)
-            puts "returning back to where the exception was raised"
-
-            catch(:resume_debugging!) do
-              Pry.start(binding, :commands => ShortCommands)
-            end
+            msg = "returning back to where the exception was raised"
+            start_pry binding, nil, msg
           else
-            puts "context of the exception is unknown, starting pry into"
-            puts "the exception."
+            msg =  "context of the exception is unknown, starting pry into\n"
+            msg << "the exception."
 
-            catch(:resume_debugging!) do
-              Pry.start(ex, :commands => ShortCommands)
-            end
+            start_pry ex, nil, msg
           end
         end
 
         PryDebug.last_exception = PryDebug.exception_binding = nil
         PryDebug.debugging = false
+
+        set_trace_func nil
         puts "execution terminated"
       else
         break # debugger wasn't started, leave now
@@ -139,46 +166,52 @@ module PryDebug
   # Starts Pry with access to ShortCommands
   # @param [Binding, object] binding Context to go to
   # @param [String, nil] file Current file. Used for the next command.
-  def start_pry(binding, file = nil)
-    ret = catch(:resume_debugging!) do
-      Pry.start(binding, :commands => ShortCommands)
-    end
+  # @param [String, nil] header Line to print before starting the debugger
+  def start_pry(binding, file = nil, header = nil)
+    PryDebug.synchronize do
+      puts header if header
 
-    if ret == :next
-      PryDebug.stepped_file = file
-    end
+      ret = catch(:resume_debugging!) do
+        Pry.start(binding, :commands => ShortCommands)
+      end
 
-    # In case trace_func was changed
-    set_trace_func trace_proc
+      if ret == :next
+        PryDebug.stepped_file = file
+      end
+
+      # In case trace_func was changed
+      set_trace_func trace_proc
+    end
+  end
+
+  def synchronize(&block)
+    PryDebug.mutex.synchronize(&block)
   end
 
   def trace_proc
     proc do |*args|
-      PryDebug.mutex.synchronize { PryDebug.trace_func(*args) }
+      PryDebug.trace_func(*args)
     end
   end
 
   def trace_func(event, file, line, method, binding, klass)
     # Ignore events in this file
-    return if file && File.expand_path(file) == File.expand_path(__FILE__)
+    return if file && File.expand_path(file) == DefinitionFile
 
     case event
     when 'line'
       if PryDebug.stepped_file == file
-        puts "stepped at #{file}:#{line}"
         PryDebug.stepped_file = nil
-
-        start_pry binding, file
+        start_pry binding, file, "stepped at #{file}:#{line} in #{Thread.current}"
       elsif PryDebug.stepping
-        puts "stepped at #{file}:#{line}"
         PryDebug.stepping = false
-
-        start_pry binding, file
+        start_pry binding, file, "stepped at #{file}:#{line} in #{Thread.current}"
       elsif bp = PryDebug.line_breakpoints.find { |b| b.is_at?(file, line, binding) }
-        puts "reached #{bp}"
-        start_pry binding, file
+        start_pry binding, file, "reached #{bp} in #{Thread.current}"
       end
     when 'c-call', 'call'
+      return unless Module === klass
+
       # Whether we are calling a class method or an instance method, klass
       # is the same thing, making it harder to guess if it's a class or an
       # instance method.
@@ -216,8 +249,7 @@ module PryDebug
       end
 
       if bp
-        puts "reached #{bp}"
-        start_pry binding, file
+        start_pry binding, file, "reached #{bp} in #{Thread.current}"
       end
     when 'raise'
       return unless $!
@@ -226,8 +258,8 @@ module PryDebug
       PryDebug.exception_binding = binding
 
       if PryDebug.break_on_raise
-        puts "exception raised: #{$!.class}: #{$!.message}"
-        start_pry binding, file
+        msg = "exception raised in #{Thread.current}: #{$!.class}: #{$!.message} "
+        start_pry binding, file, msg
       end
     end
   end
@@ -244,8 +276,4 @@ module PryDebug
     PryDebug.breakpoints << bp
     bp
   end
-end
-
-if $PROGRAM_NAME == __FILE__
-  PryDebug.start
 end
