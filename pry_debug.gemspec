@@ -13,8 +13,12 @@ until you find what caused the bug. Just add a breakpoint and see the value of
 any variable.
 EOD
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- test/*`.split("\n")
+  s.files  = Dir["lib/**/*.rb"]
+  s.files += Dir["test/**/*.rb"]
+  s.files << "bin/pry_debug"
+
+  s.files << "README.md"
+
   s.executables   = %w[pry_debug]
   s.require_paths = %w[lib]
 
