@@ -17,7 +17,7 @@ EOD
   s.files += Dir["test/**/*.rb"]
   s.files << "bin/pry_debug"
 
-  s.files << "README.md"
+  s.files << "README.md" << "LICENSE"
 
   s.executables   = %w[pry_debug]
   s.require_paths = %w[lib]
