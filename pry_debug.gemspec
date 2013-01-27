@@ -1,7 +1,12 @@
 # -*- encoding: utf-8 -*-
+
+$LOAD_PATH.unshift File.expand_path("../lib", __FILE__)
+
+require 'pry_debug/version'
+
 Gem::Specification.new do |s|
   s.name        = "pry_debug"
-  s.version     = "0.0.1"
+  s.version     = PryDebug::Version
   s.authors     = ["Mon ouïe"]
   s.email       = ["mon.ouie@gmail.com"]
   s.homepage    = "http://github.com/Mon-Ouie/pry_debug"
