@@ -37,7 +37,7 @@ Just use the ``pry_debug`` executable, configure the debugger (add breakpoints,
 $ pry_debug file.rb
 debugged file set to test_debug.rb
 pry(main)> b Foo.foo
-addded breakpoint 0 at Foo.foo
+added breakpoint 0 at Foo.foo
 pry(main)> r
 reached breakpoint 0 at Foo.foo
 
@@ -122,7 +122,7 @@ isn't it?
 
 ```
 pry(Foo):3> b SomeClass#some_method
-addded breakpoint 2 at SomeClass#some_method
+added breakpoint 2 at SomeClass#some_method
 ```
 
 SomeClass#some_method is used to break on the instance method ``some_method`` of
