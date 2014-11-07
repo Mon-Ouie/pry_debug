@@ -118,7 +118,7 @@ module PryDebug
     # Importing user-defined commands.
     # NB: what about commands defined in both sets? Currently, user-defined
     # commands override PryDebug's. What about doing it the other way around?
-    Pry.load_rc if Pry.config.should_load_rc # user might change Pry.commands
+    Pry.load_rc_files if Pry.config.should_load_rc # user might change Pry.commands
     Pry.config.should_load_rc = false # avoid loading config twice
     ShortCommands.import Pry.commands
 
